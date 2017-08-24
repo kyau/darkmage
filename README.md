@@ -1,4 +1,4 @@
-    $Arch: README.md,v 1.000 2017/08/24 14:19:00 kyau Exp $
+    Arch: README.md,v 1.002 2017/08/24 15:27:15 kyau Exp $
 
 ### About
 This botnet script has been around for longer than I can remember. While I know 
@@ -7,9 +7,10 @@ original form was given to me by a friend long ago). It has had three major
 iterations since, evolving originally from a clone of netbots that I called 
 `tribe9`, these two scripts were merged together to form `blackmajick` which 
 also gained a few external module scripts and channel limit control (imported 
-from a script called dolimit). Around 2006 I started getting back into TCL coding 
-and IRC in general and modified the script quite a bit, only to once again rename 
-the script to `darkMAGE`.
+from a script called dolimit) along with a BitchX clone mode (makes the eggdrop 
+appear as if it is a BitchX client). Around 2006 I started getting back into TCL 
+coding and IRC in general and modified the script quite a bit, only to once 
+again rename the script to `darkMAGE`.
 
 ### Usage
 In order to use this script with your botnet, add the script to your eggdrop config 
