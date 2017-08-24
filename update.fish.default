@@ -1,0 +1,54 @@
+#!/usr/bin/env fish
+# $Arch: update.fish.default,v 1.006 2017/08/24 15:08:20 kyau Exp $
+
+# Name of each bot (sets the order)
+set -l botname "hub" "bot1" "bot2" "bot3"
+# SSH Host for each bot (order is important)
+set -l hosts "hub.domain.com" "bot1.domain.com" "bot2.domain.org" "bot3.domain.net"
+# Remote directory location of bot (order is important)
+set -l dirs "/home/user/eggdrop/" "/staff/user/eggdrop/" "/staff/user/eggdrop2/" "/home2/user/eggdrop/"
+# Local location of bots config (order is important)
+set -l conf "config/hub.conf" "config/bot1.conf" "config/bot2.conf" "config/bot3.conf"
+
+function section
+	printf "\\x1b[38;5;32m\\u254d \\x1b[38;5;252m%s\\x1b[0m " "$argv"
+end
+function testcmd
+	if test $status -eq 0
+		printf "\\x1b[1;32m \\uf00c \\x1b[0m"
+	else
+		printf "\\x1b[31m \\uf00d \\x1b[0m"
+	end
+end
+
+if test $argv = "tcl"
+	for i in (seq (count $hosts))
+		section "$botname[$i] \x1b[38;5;242m$hosts[$i]"
+		printf ": tcl"
+		scp darkmage.tcl $hosts[$i]:$dirs[$i]scripts/ >/dev/null 2>&1
+		testcmd
+		printf "\\n"
+	end
+end
+
+if test $argv = "conf"
+	for i in (seq (count $hosts))
+		section $hosts[$i]
+		printf ": config"
+		scp $conf[$i] $hosts[$i]:$dirs[$i] >/dev/null 2>&1
+		testcmd
+		printf "\\n"
+	end
+end
+
+if test $argv = "text"
+	for i in (seq (count $hosts))
+		section $hosts[$i]
+		printf ": text"
+		scp text/banner $hosts[$i]:$dirs[$i]text/banner >/dev/null 2>&1
+		testcmd
+		scp text/motd $hosts[$i]:$dirs[$i]text/motd >/dev/null 2>&1
+		testcmd
+		printf "\\n"
+	end
+end

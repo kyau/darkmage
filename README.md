@@ -16,19 +16,19 @@ In order to use this script with your botnet, add the script to your eggdrop con
 and restart/rehash your eggdrop. Linking bots is relatively easy.
 
 ```shell
-**on the hub**
-> .+bot *leafbot* *1.2.3.4* *+9999*
-> .+host *leafbot* *\*!ident@1.2.3.4*
-> .chattr *leafbot* +bfopA
-> .botattr *leafbot* +gs
+"On the HUB"
+> .+bot leafbot 1.2.3.4 +9999
+> .+host leafbot *!ident@1.2.3.4
+> .chattr leafbot +bfopA
+> .botattr leafbot +gs
 ```
 
 ```shell
-**on each connecting bot**
-> .+bot *hub* *1.2.3.4* *+9999*
-> .+host *hub* *\*!ident@1.2.3.4*
-> .chattr *hub* +bfopA
-> .botattr *hub* +ghp
+"On Each Connecting Bot"
+> .+bot hub 1.2.3.4 +9999
+> .+host hub *!ident@1.2.3.4
+> .chattr hub +bfopA
+> .botattr hub +ghp
 ```
 
 ### Attribution
