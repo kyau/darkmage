@@ -1,7 +1,7 @@
-# $Arch: darkmage.tcl,v 1.032 2017/08/24 01:59:17 kyau Exp $
+# $Arch: darkmage.tcl,v 1.035 2017/08/25 11:38:16 kyau Exp $
 
-set dmver "1.032"
-set releasedate "08.24.2017"
+set dmver "1.035"
+set releasedate "2017.08.25"
 # CONFIGURATION {{{
 set notify-newusers { "kyau" }		;# users to notify of new users and bots.
 logfile 5 * "logs/darkMAGE.log"		;# darkMAGE logfile
@@ -9,6 +9,7 @@ set local_control "A"							;# botattr for local bots
 set bn_control "*"								;# default botnet control (* is all)
 set modes-per-line 4							;# irc network modes-per-line (EFnet: 4)
 set partylinelist 1								;# display partyline users on dcc connection (0/1)
+set bop_opkey "magicmonkey"				;# key used for encrypted ops verification
 set bop_modeop 1									;# requests ops when others get ops (0/1)
 set bop_linkop 1									;# requests ops from other linked bots (0/1)
 set bop_icheck 1									;# perform invite check to get in channels (0/1)
@@ -27,12 +28,15 @@ loadmodule filesys
 putlog "\00311darkMAGE\003 \00314v$dmver\003 - \00315kyau\003 \0037<kyau@kyau.net>\003"
 # }}}
 # BINDS AND UNBINDS {{{
-unbind dcc o|o +ban *dcc:+ban;
-unbind dcc o act *dcc:act
-unbind dcc o msg *dcc:msg
-unbind dcc o say *dcc:say
-unbind dcc - whom *dcc:whom
-unbind msg - addhost *msg:addhost
+catch {unbind dcc o|o +ban *dcc:+ban}
+catch {unbind dcc o act *dcc:act}
+catch {unbind dcc o msg *dcc:msg}
+catch {unbind dcc o say *dcc:say}
+catch {unbind dcc - whom *dcc:whom}
+catch {unbind dcc - op *dcc:op}
+catch {unbind dcc - bots *dcc:bots}
+catch {unbind msg - addhost *msg:addhost}
+catch {unbind msg - op *msg:op}
 bind bot - botnet botnet_proc
 bind bot - botnet_chans botnet_channels
 bind bot - these_chans these_chans
@@ -62,6 +66,7 @@ bind dcc m autoaway dcc:autoaway
 bind dcc n bitchx bx_dccbitchx
 bind dcc n botnick dcc_botnick
 bind dcc n botnet botnetmsg_proc
+bind dcc n bots dcc_bots
 bind dcc n botstat dcc_bots
 bind dcc n channels cmd_channels
 bind dcc - darkmage dm_help
@@ -70,12 +75,15 @@ bind dcc n dolimit dm:dcc:dolimit
 bind dcc m|m hostcheck dcc:hostcheck
 bind dcc n kill dcc_kill
 bind dcc n msg *dcc:msg
+bind dcc - op dcc_op
 bind dcc n say *dcc:say
 bind dcc p sv dcc_about
 bind dcc o|o userlist dcc_userlist
 bind dcc n vcheck dcc_extcheck
 bind dcc p version dcc_about
 bind dcc p whom dcc:whomall
+bind msg - op msg_op
+bind raw - MODE encrypted_opverify
 bind time - "57 * * * *" time:keeplinked
 bind raw - 001 bx_serverjoin
 # }}}
@@ -85,11 +93,26 @@ proc putbotdcc {idx dcctxt} {
 	set dmtime [clock format $sysTime -format %H:%M:%S]
 	putdcc $idx "\[$dmtime\] \00311darkMAGE\003\00314\037:\037\003 $dcctxt"
 }
+proc putbotdcclog {logtxt} {
+	putlog "\00311darkMAGE\003\00314\037:\037\003 $logtxt"
+}
+proc putbotdccerr {idx errtxt} {
+	set sysTime [clock seconds]
+	set dmtime [clock format $sysTime -format %H:%M:%S]
+	putdcc $idx "\[$dmtime\] \00304ERROR\003\00314\037:\037\003 $errtxt"
+}
 proc xindex {xr xr1} {
 	return [join [lrange [split $xr] $xr1 $xr1]]
 }
 proc xrange {xr xr1 xr2} {
 	return [join [lrange [split $xr] $xr1 $xr2]]
+}
+proc xstrcmp {str1 str2} {
+	if {[string compare [string tolower $str1] [string tolower $str2]] == 0} {
+		return 1
+	} else {
+		return 0
+	}
 }
 proc putbotlog {logtxt} {
 	putloglev 5 "*" "darkMAGE\037:\037 $logtxt"
@@ -99,6 +122,19 @@ if { [info vars botnet-nick] == "" } {
 }
 if { [info vars botnet-nick] != "" } {
 	set bnnick ${botnet-nick}
+}
+# Encrypted Hash
+proc bop_encrypted {thost tnick} {
+	global bop_opkey
+	set sysTime [clock seconds]
+	set thour [clock format $sysTime -gmt true -format %H]
+	set tbin "md5sum"
+	if {[exec uname -s] == "OpenBSD"} {
+		set tbin "md5"
+	}
+	#putlog "\00306DEBUG:\003 tbin:{$tbin} thour:{$thour} thost:{$thost} tnick:{$tnick}"
+	catch {exec echo -n "$thour$thost$tnick$bop_opkey" | $tbin | cut -f 1 -d " "} result
+	return $result
 }
 # }}}
 # HELP {{{
@@ -621,6 +657,88 @@ if {$ffound == 0} {
 	append whois-fields " " "Added"
 }
 # }}}
+# MSG: OP {{{
+proc msg_op {nick uhost hand arg} {
+	global botnick
+	set pw [xindex $arg 0]
+	set chan [string tolower [xindex $arg 1]]
+	if {[xstrcmp $nick $botnick]} {
+		return 0
+	}
+	if {[passwdok $hand ""]} {
+		putbotdcclog "($nick!$uhost) $hand failed OP!"
+		return 0
+	}
+	if {[passwdok $hand $pw]} {
+		if {$chan != ""} {
+			if {![validchan $chan] || ![onchan $botnick $chan] || ![isop $botnick $chan]} {
+				putbotdcclog "($nick!$uhost) $hand failed OP!"
+				return 0
+			}
+			if {[onchan $nick $chan] && ![isop $nick $chan] && [matchattr [nick2hand $nick $chan] (o|#o)&-d&#-d $chan]} {
+				set thost [getchanhost $nick $chan]
+				set trandom [bop_encrypted $thost $nick]
+				putquick "MODE $chan +o-b $nick *!$nick@$trandom"
+				putbotdcclog "\00307#op#\003 \002$nick\002!$uhost \00314($hand)\0003"
+			}
+			return 0		
+		}
+		foreach chan [channels] {
+			set chan [string tolower $chan]
+			if {[onchan $nick $chan] && ![isop $nick $chan] && [matchattr [nick2hand $nick $chan] (o|#o)&-d&#-d $chan]} {
+				set thost [getchanhost $nick $chan]
+				set trandom [bop_encrypted $thost $nick]
+				putquick "MODE $chan +o-b $nick *!$nick@$trandom"
+			}
+		}
+		putbotdcclog "\00307#op#\003 \002$nick\002!$uhost \00314($hand)\003"
+		return 0
+	}
+	putbotdcclog "($nick!$uhost) $hand failed OP!"
+	return 0
+}
+# }}}
+# DCC: .+BOT {{{
+proc dcc:+bot {hand idx paras} {
+	set user [lindex $paras 0]
+	if {[validuser $user]} {
+		*dcc:+bot $hand $idx $paras
+	} else {
+		*dcc:+bot $hand $idx $paras
+		if {[validuser $user]} {
+			setuser $user xtra Added "by $hand as $user ([strftime %Y-%m-%d@%H:%M])"
+			tellabout $hand $user
+		}
+	}
+}
+proc tellabout {hand user} {
+	global nick notify-newusers
+	foreach ppl ${notify-newusers} {
+		sendnote $nick $ppl "introduced to $user by $hand"
+	}
+}
+# }}}
+# DCC: .+USER {{{
+proc dcc:+user {hand idx paras} {
+	set user [lindex $paras 0]
+	if {[validuser $user]} {
+		*dcc:+user $hand $idx $paras
+	} else {
+		*dcc:+user $hand $idx $paras
+		if {[validuser $user]} {
+			setuser $user xtra Added "by $hand as $user ([strftime %Y-%m-%d@%H:%M])"
+			tellabout $hand $user
+		}
+	}
+}
+# }}}
+# DCC: .ABOUT {{{
+proc dcc_about {hand idx args} {
+	global dmver
+	putbotdcc $idx "\0037#about#\003"
+	putbotdcc $idx "darkMAGE v$dmver - kyau <kyau@kyau.net>"
+}
+# }}}
 # DCC: .ADDUSER {{{
 proc dcc:adduser {hand idx paras} {
 	set user [lindex $paras 1]
@@ -642,37 +760,58 @@ proc dcc:adduser {hand idx paras} {
 	}
 }
 # }}}
-# DCC: .+USER {{{
-proc dcc:+user {hand idx paras} {
-	set user [lindex $paras 0]
-	if {[validuser $user]} {
-		*dcc:+user $hand $idx $paras
-	} else {
-		*dcc:+user $hand $idx $paras
-		if {[validuser $user]} {
-			setuser $user xtra Added "by $hand as $user ([strftime %Y-%m-%d@%H:%M])"
-			tellabout $hand $user
-		}
+# DCC: .OP {{{
+proc dcc_op {hand idx arg} {
+	global botnick
+	set nick [xindex $arg 0]
+	if {$nick == ""} {
+		putbotdcc $idx "\002usage:\002 op \[nickname\] \[#channel\]"
+		return 0
 	}
-}
-# }}}
-# DCC: .+BOT {{{
-proc dcc:+bot {hand idx paras} {
-	set user [lindex $paras 0]
-	if {[validuser $user]} {
-		*dcc:+bot $hand $idx $paras
+	set chan [xindex $arg 1]
+	if {$chan != ""} {
+		putlog "moo1"
+		if {![matchattr [set hand [nick2hand $nick $chan]] o|o $chan]} { return 0 }
 	} else {
-		*dcc:+bot $hand $idx $paras
-		if {[validuser $user]} {
-			setuser $user xtra Added "by $hand as $user ([strftime %Y-%m-%d@%H:%M])"
-			tellabout $hand $user
+		set chan {}
+		set tnum 0
+		foreach ichan [channels] {
+			putlog "$tnum:chan:$ichan"
+			if {[botisop $ichan] && [matchattr [set hand [nick2hand $nick $ichan]] o|o $ichan] && ![isop $nick $ichan]} {
+				lappend chan $ichan
+			}
+			incr tnum
 		}
+		if {$chan == ""} { return 0 }
 	}
-}
-proc tellabout {hand user} {
-	global nick notify-newusers
-	foreach ppl ${notify-newusers} {
-		sendnote $nick $ppl "introduced to $user by $hand"
+	if {[llength $chan] == 1} {
+		if {![onchan $nick [join $chan]]} {
+			putbotdccerr $idx "$nick is not on [join $chan]."
+			return 0
+		}
+		putlog "moo2"
+		if {![isop $botnick [join $chan]]} {
+			putbotdccerr $idx "I can't help you now because I'm not a chan op on [join $chan]."
+			return 0
+		}
+		if {![matchattr [nick2hand $nick [join $chan]] o|#o [join $chan]]} {
+			putbotdccerr $idx "$nick is not a channel op on [join $chan]."
+			return 0
+		}
+		set thost [getchanhost $nick [join $chan]]
+		set trandom [bop_encrypted $thost $nick]
+		putquick "MODE [join $chan] +o-b $nick *!$nick@$trandom"
+		return 1
+	} else {
+		putlog "made it!"
+		foreach ichan $chan {
+			if {[onchan $nick $ichan] && [isop $botnick $ichan] && [matchattr [nick2hand $nick $ichan] o|#o $ichan]} {
+				set thost [getchanhost $nick $ichan]
+				set trandom [bop_encrypted $thost $nick]
+				putquick "MODE $ichan +o-b $nick *!$nick@$trandom"
+			}
+		}
+		return 1
 	}
 }
 # }}}
@@ -714,88 +853,6 @@ proc dcc_userlist {hand idx arg} {
 		putbotdcc $idx "Found $i2 person(s) out of [countusers] matching specified flag"
 	}
 	return 1
-}
-# }}}
-# DCC: .CHANNELS {{{
-proc cmd_channels {hand idx args} {
-	putbotdcc $idx "\0037#channels#\003"
-	putbotdcc $idx "[channels]"
-}
-# }}}
-# DCC: .ABOUT {{{
-proc dcc_about {hand idx args} {
-	global dmver
-	putbotdcc $idx "\0037#about#\003"
-	putbotdcc $idx "darkMAGE v$dmver - kyau <kyau@kyau.net>"
-}
-# }}}
-# DCC: .VCHECK {{{
-proc dcc_extcheck {hand idx arg} {
-	global botnick dmver
-	putbotdcc $idx "\0037#version check#\003"
-	putbotdcc $idx "\00315\002$botnick\002\003 running darkMAGE v$dmver"
-	putallbots "vBOTNET_CHECK_EGGDROP_EXT $idx $hand"
-}
-proc bot_extcheck {bot cmd arg} {
-	global dmver botnick
-	putbot $bot "vBOTNET_CHECK_EGGDROP_EXT_ACK [lindex $arg 0] \00315\002$botnick\002\003 running darkMAGE v$dmver"
-}
-proc bot_extcheckack {bot cmd arg} {
-	putbotdcc [lindex $arg 0] "[lreplace $arg 0 0]"
-}
-# }}}
-# DCC: .BOTNICK {{{
-proc dcc_botnick {hand idx arg} {
-	global nick altnick botnick
-	if { $arg == "" } {
-		putbotdcc $idx "\002usage:\002 botnick <nick> \[altnick\]"
-		putbotdcc $idx "I am: $botnick ::: Regular: $nick ::: Reserve: $altnick"
-		return
-	}
-	set nick [lindex $arg 0]
-	putbotdcc $idx "Normal botnick set to: [lindex $arg 0]"
-	if { [llength $arg] == 2 } {
-		set altnick [lindex $arg 1]
-		putbotdcc $idx "Botnick alternate set to: [lindex $arg 1]"
-	}
-	if { [llength $arg] == 1 } {
-		set altnick "[string range [lindex $arg 0] 0 7]_"
-		putbotdcc $idx "Botnick alternate set to: [string range [lindex $arg 0] 0 7]_"
-	}
-}
-# }}}
-# DCC: .HOSTCHECK {{{
-proc dcc:hostcheck {handle idx arg} {
-	set hosts $arg
-	if {$hosts == ""} {
-		putbotdcc $idx "\002usage:\002 .hostcheck <numberofhosts>"
-		return
-	}
-	append list ""
-	set usercount 0
-	foreach user [userlist] {
-		set hostcount 0
-		foreach host [getuser $user hosts] {
-			incr hostcount 1
-		}
-		if {$hostcount >= $hosts} {
-			append list "$user, "
-			incr usercount 1
-		}
-	}
-	if {$list >= 1} {
-		putbotdcc $idx "hostcheck found: $usercount with \002\HOST: $hosts \002\or more hosts \002\: [string trimright $list ", "]"
-	} else {
-		putbotdcc $idx "No users found with $hosts or more hosts"
-	}
-}
-proc time:keeplinked {min hour day month year} {
-	foreach b [userlist b] {
-		if {([string match "*h*" "[getuser $b BOTFL]"] || [string match "*a*" "[getuser $b BOTFL]"]) && (![string match "*r*" "[getuser $b BOTFL]"] && ![islinked $b])} {
-			putbotlog "Keeplinked linking: \002\ $b ...\002\ "
-			link "$b" 
-		}
-	}
 }
 # }}}
 # DCC: .WHOM {{{
@@ -1016,17 +1073,7 @@ proc bop_doiwantops {frombot cmd arg} {
 	}
 	return 0
 }
-# Encrypted Hash
-proc bop_encrypted {thost tnick} {
-	set sysTime [clock seconds]
-	set thour [clock format $sysTime -format %H]
-	set tbin "md5sum"
-	if {[exec uname -s] == "OpenBSD"} {
-		set tbin "md5"
-	}
-	catch {exec echo -n "$thour$thost$tnick" | $tbin} result
-	return $result
-}
+
 proc bop_botwantsops {frombot cmd arg} {
 	global bop_addhost bop_log bop_osync numversion strict-host
 	set chan [lindex [split $arg] 0] ; set fromnick [lindex [split $arg] 1] ; set fromhost [lindex [split $arg] 2]
@@ -1044,8 +1091,8 @@ proc bop_botwantsops {frombot cmd arg} {
 		setuser $frombot HOSTS $host
 		putlog "darkMAGE: added host $host to $frombot"
 	}
+	set trandom [bop_encrypted $fromhost $fromnick]
 	if {$bop_osync} {
-		set trandom [bop_encrypted 32]
 		if {$numversion < 1040000} {
 			#putlog "moo0"
 			putquick "MODE $chan +o-b $fromnick *!$frombot@$trandom"
@@ -1056,7 +1103,6 @@ proc bop_botwantsops {frombot cmd arg} {
 	} else {
 		if {[isop $fromnick $chan]} {return 0}
 		#putlog "moo2"
-		set trandom [bop_encrypted $fromhost $fromnick]
 		putquick "MODE $chan +o-b $fromnick *!$frombot@$trandom"
 	}
 	if {$bop_log >= 2} {
@@ -1322,6 +1368,33 @@ bind bot - thekey bop_joinkey
 bind join - * bop_jointmr
 bind part - * bop_unsetneed
 bind raw - 352 bop_who
+# }}}
+# ENCRYPTED OP: VERIFY {{{
+proc encrypted_opverify {from key text} {
+	global botnick bop_opkeys
+	set chan [xindex $text 0]
+	set modes [string tolower [xindex $text 1]]
+	set opnick [lindex [split $from "!"] 0]
+	set text [xrange $text 2 end]
+	set nick [lindex $text 0]
+	if {![string match "*+o*" $modes]} { return 0 }
+	if {([string index $chan 0] != "#") && ([string index $chan 0] != "&") && ([string index $chan 0] != "!")} {
+		return 0
+	}
+	if {$modes == "+o-b"} {
+		set thost [getchanhost $nick $chan]
+		set trandom [lindex [bop_encrypted $thost $nick] 0]
+		set hash [lindex [split $text "@"] 1]
+		#putlog "\00306DEBUG:\003 hash:{$hash}"
+		#putlog "\00306DEBUG:\003 checked:{$trandom}"
+		if {$trandom == $hash} {
+			putbotdcclog "OP Hash: \00315$hash\003\00309  \003"
+		} else {
+			putbotdcclog "OP Hash: \00315$hash\003\00304  \003"
+			putquick "MODE $chan -oo-b $nick $opnick *!$botnick@ERR_INVALID_HASH"
+		}
+	}
+}
 # }}}
 # ANTIIDLE {{{
 set idle.1 10
