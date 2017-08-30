@@ -1,4 +1,4 @@
-# $Arch: darkmage.tcl,v 1.035 2017/08/25 11:38:16 kyau Exp $
+# $Arch: darkmage.tcl,v 1.036 2017/08/29 22:45:47 kyau Exp $
 
 set dmver "1.035"
 set releasedate "2017.08.25"
@@ -135,6 +135,14 @@ proc bop_encrypted {thost tnick} {
 	#putlog "\00306DEBUG:\003 tbin:{$tbin} thour:{$thour} thost:{$thost} tnick:{$tnick}"
 	catch {exec echo -n "$thour$thost$tnick$bop_opkey" | $tbin | cut -f 1 -d " "} result
 	return $result
+}
+proc time:keeplinked {min hour day month year} {
+ foreach b [userlist b] {
+  if {([string match "*h*" "[getuser $b BOTFL]"] || [string match "*a*" "[getuser $b BOTFL]"]) && (![string match "*r*" "[getuser $b BOTFL]"] && ![islinked $b])} {
+   putbotlog "Keeplinked linking: \002\ $b ...\002\ "
+   link "$b" 
+  }
+ }
 }
 # }}}
 # HELP {{{
