@@ -1,7 +1,7 @@
-# $Arch: darkmage.tcl,v 1.036 2017/08/29 22:45:47 kyau Exp $
+# $Arch: darkmage.tcl,v 1.037 2017/09/01 11:35:50 kyau Exp $
 
-set dmver "1.035"
-set releasedate "2017.08.25"
+set dmver "1.037"
+set releasedate "2017.09.01"
 # CONFIGURATION {{{
 set notify-newusers { "kyau" }		;# users to notify of new users and bots.
 logfile 5 * "logs/darkMAGE.log"		;# darkMAGE logfile
@@ -766,6 +766,22 @@ proc dcc:adduser {hand idx paras} {
 			tellabout $hand $user
 		}
 	}
+}
+# }}}
+# DCC: .CHANNELS {{{
+proc cmd_channels {hand idx args} {
+	putbotdcc $idx "\0037#channels#\003"
+	set chans {}
+	foreach chan [channels] {
+		if {![botisop $chan]} {
+			#putdcc $idx "$chan"
+			lappend chans "\00305$chan\003"
+		} else {
+			#putdcc $idx "@$chan"
+		  lappend chans "$chan"
+		}
+	}
+ 	putbotdcc $idx "$chans"
 }
 # }}}
 # DCC: .OP {{{
