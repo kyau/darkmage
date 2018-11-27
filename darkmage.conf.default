@@ -1,5 +1,5 @@
 #! /home/USERNAME/REPLACEME/eggdrop
-# $Arch: hub.conf.default,v 1.001 2018/11/27 22:34:21 kyau Exp $
+# $Arch: darkmage.conf.default,v 1.003 2018/11/27 23:27:06 kyau Exp $
 
 # This next line checks if eggdrop is being executed from the source directory
 if {[file exists aclocal.m4]} { die {You are attempting to run Eggdrop from the source directory. Please finish installing Eggdrop by running "make install" and run it from the install location.} }
@@ -181,7 +181,7 @@ proc evnt:init_server {type} {
 }
 set default-port 6667
 set servers {
-  chat.efnet.org
+  irc.efnet.org
 }
 set msg-rate 2
 set keep-nick 1
