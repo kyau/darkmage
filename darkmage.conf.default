@@ -43,7 +43,7 @@ set userfile-perm 0600
 # BOTNET/DCC/TELNET {{{
 set botnet-nick "REPLACEME"
 listen +9900 all
-#listen 9901 all
+listen 9901 all
 set remote-boots 2
 set share-unlinks 1
 set protect-telnet 1
