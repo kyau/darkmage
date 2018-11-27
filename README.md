@@ -1,4 +1,4 @@
-    Arch: README.md,v 1.002 2017/08/24 15:27:15 kyau Exp $
+	$Arch: README.md,v 1.003 2018/11/27 23:52:43 kyau Exp $
 
 ### About
 This botnet script has been around for longer than I can remember. While I know 
@@ -18,16 +18,18 @@ and restart/rehash your eggdrop. Linking bots is relatively easy.
 
 ```shell
 "On the HUB"
-> .+bot leafbot 1.2.3.4 +9999
+> .+bot leafbot 1.2.3.4 +9900/9901
 > .+host leafbot *!ident@1.2.3.4
+> .+host leafbot *!ident@hostname
 > .chattr leafbot +bfopA
 > .botattr leafbot +gs
 ```
 
 ```shell
 "On Each Connecting Bot"
-> .+bot hub 1.2.3.4 +9999
+> .+bot hub 1.2.3.4 +9900/9901
 > .+host hub *!ident@1.2.3.4
+> .+host hub *!ident@hostname
 > .chattr hub +bfopA
 > .botattr hub +ghp
 ```
