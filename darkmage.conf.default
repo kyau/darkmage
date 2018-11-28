@@ -1,5 +1,5 @@
 #! /home/USERNAME/REPLACEME/eggdrop
-# $Arch: darkmage.conf.default,v 1.003 2018/11/27 23:27:06 kyau Exp $
+# $Arch: darkmage.conf.default,v 1.005 2018/11/28 09:31:57 kyau Exp $
 
 # This next line checks if eggdrop is being executed from the source directory
 if {[file exists aclocal.m4]} { die {You are attempting to run Eggdrop from the source directory. Please finish installing Eggdrop by running "make install" and run it from the install location.} }
@@ -149,26 +149,26 @@ set default-ban-time 120
 set default-exempt-time 60
 set default-invite-time 60
 set default-chanset {
-        -autoop         -autovoice
-        -bitch          +cycle
-        +dontkickops    +dynamicbans
-        +dynamicexempts +dynamicinvites
-        -enforcebans    +greet
-        -inactive       -nodesynch
-        -protectfriends +protectops
-        -revenge        -revengebot
-        -secret         -seen
-        +shared         -statuslog
-        +userbans       +userexempts
-        +userinvites    -protecthalfops
-        -autohalfop     -static
+	-autoop			-autovoice
+	-bitch			+cycle
+	+dontkickops	+dynamicbans
+	+dynamicexempts	+dynamicinvites
+	-enforcebans	+greet
+	-inactive		-nodesynch
+	-protectfriends	+protectops
+	-revenge		-revengebot
+	-secret			-seen
+	+shared			-statuslog
+	+userbans		+userexempts
+	+userinvites	-protecthalfops
+	-autohalfop		-static
 }
 # }}}
 # SERVER MODULE {{{
 loadmodule server
 # Control certificate verification for irc servers. For a description of the
 # possible values, look at the SSL SETTINGS section above.
-set ssl-verify-server 1
+set ssl-verify-server 0
 set net-type 0
 set nick "REPLACEME"
 set altnick "REPLACEME_"
@@ -176,12 +176,39 @@ set realname "MYNETWORK"
 # This is a Tcl script to be run immediately after connecting to a server.
 bind evnt - init-server evnt:init_server
 proc evnt:init_server {type} {
-  global botnick
-  putquick "MODE $botnick +i-ws"
+	global botnick
+	putquick "MODE $botnick +i-ws"
 }
 set default-port 6667
+# north america
+#	irc.servercentral.net:+9999		# Chicago, IL
+#	irc.mzima.net:+9999				# Los Angeles, CA / IPv6
+#	irc.choopa.net:+9999			# New York, NY / IPv6
+#	irc.colosolutions.net:+9999		# Orlando, FL
+#	irc.Prison.NET:6667				# San Francisco, CA
+#	irc2.choopa.net:+9999			# New York, NY / IPv6
+# europe
+#	efnet.port80.se:+9999			# Stockholm, Sweden / IPv6
+#	irc.inet.tele.dk:+9999			# Aarhus, Denmark / IPv6
+#	irc.underworld.no:+9999			# Oslo, Norway / IPv6
+#	efnet.portlane.se:+9999			# Stockholm, Sweden / IPv6
+#	irc.efnet.nl:+9999				# Netherlands
+#	irc.homelien.no:6667			# Oslo, Norway / IPv6
+#	irc.nordunet.se:+9999			# Stockholm, Sweden / IPv6
+#	irc.du.se:+6697					# Borlange, Sweden
 set servers {
-  irc.efnet.org
+	irc.servercentral.net:+9999
+	irc.mzima.net:+9999
+	irc.choopa.net:+9999
+	irc.colosolutions.net:+9999
+	irc2.choopa.net:+9999
+	efnet.port80.se:+9999
+	irc.inet.tele.dk:+9999
+	irc.underworld.no:+9999
+	efnet.portlane.se:+9999
+	irc.efnet.nl:+9999
+	irc.nordunet.se:+9999
+	irc.du.se:+6697
 }
 set msg-rate 2
 set keep-nick 1
@@ -262,11 +289,25 @@ set force-channel 0
 set info-party 0
 # }}}
 # SCRIPTS {{{
+# eggdrop defaults
 source scripts/alltools.tcl
 source scripts/action.fix.tcl
 source scripts/dccwhois.tcl
-source scripts/compat.tcl
-# EFnet Anti-Drone
-source scripts/quotepong.tcl
+# eggdrop defaults - network specific
+if {[info exists net-type]} {
+	switch -- ${net-type} {
+		"0" {
+			# EFnet (Anti-Drone)
+			source scripts/quotepong.tcl
+		}
+		"2" {
+			# Undernet
+			source scripts/quotepass.tcl
+		}
+	}
+}
+# dark!mage
 source scripts/darkmage.tcl
 # }}}
+
+# vim: ft=tcl ts=4 sw=4 noet:
