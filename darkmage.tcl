@@ -1,7 +1,30 @@
-# $Arch: darkmage.tcl,v 1.037 2017/09/01 11:35:50 kyau Exp $
+# $Arch: darkmage.tcl,v 1.038 2018/11/28 10:33:48 kyau Exp $
+#
+# ▄▄▄  ▄▄▄▄ ▄▄▄▄ ▄▄ ▄ ▄▄ ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄ ▄▄▄▄
+# ██ █ ██ █ ██ █ ██ █ ██ ██ █ █ ██ █ ██    ██ ▀
+# ██ █ ██▄█ ██▄▀ ██▄▀ ██ ██ █ █ ██▄█ ██ ▄▄ ██▀
+# ██ █ ██ █ ██ █ ██ █ ▀▀ ██ █ █ ██ █ ██ ▀█ ██ █
+# ▀▀▀▀ ▀▀ ▀ ▀▀ ▀ ▀▀ ▀ ▀▀ ▀▀ ▀ ▀ ▀▀ ▀ ▀▀▀▀▀ ▀▀▀▀
+#
+# dark!mage - tcl botpack for eggdrop
+# Copyright (C) 2018 KYAU Labs (https://kyaulabs.com)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-set dmver "1.037"
-set releasedate "2017.09.01"
+set dmver "1.038"
+set releasedate "2018.11.28"
 # CONFIGURATION {{{
 set notify-newusers { "kyau" }		;# users to notify of new users and bots.
 logfile 5 * "logs/darkMAGE.log"		;# darkMAGE logfile

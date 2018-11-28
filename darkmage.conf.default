@@ -1,5 +1,28 @@
 #! /home/USERNAME/REPLACEME/eggdrop
-# $Arch: darkmage.conf.default,v 1.005 2018/11/28 09:31:57 kyau Exp $
+# $Arch: darkmage.conf.default,v 1.006 2018/11/28 10:33:10 kyau Exp $
+#
+# ▄▄▄  ▄▄▄▄ ▄▄▄▄ ▄▄ ▄ ▄▄ ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄ ▄▄▄▄
+# ██ █ ██ █ ██ █ ██ █ ██ ██ █ █ ██ █ ██    ██ ▀
+# ██ █ ██▄█ ██▄▀ ██▄▀ ██ ██ █ █ ██▄█ ██ ▄▄ ██▀
+# ██ █ ██ █ ██ █ ██ █ ▀▀ ██ █ █ ██ █ ██ ▀█ ██ █
+# ▀▀▀▀ ▀▀ ▀ ▀▀ ▀ ▀▀ ▀ ▀▀ ▀▀ ▀ ▀ ▀▀ ▀ ▀▀▀▀▀ ▀▀▀▀
+#
+# dark!mage - tcl botpack for eggdrop
+# Copyright (C) 2018 KYAU Labs (https://kyaulabs.com)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
 # This next line checks if eggdrop is being executed from the source directory
 if {[file exists aclocal.m4]} { die {You are attempting to run Eggdrop from the source directory. Please finish installing Eggdrop by running "make install" and run it from the install location.} }
