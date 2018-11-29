@@ -1,4 +1,4 @@
-# $Arch: darkmage.tcl,v 1.038 2018/11/28 10:33:48 kyau Exp $
+# $Arch: darkmage.tcl,v 1.040 2018/11/29 12:54:49 kyau Exp $
 #
 # ▄▄▄  ▄▄▄▄ ▄▄▄▄ ▄▄ ▄ ▄▄ ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄ ▄▄▄▄
 # ██ █ ██ █ ██ █ ██ █ ██ ██ █ █ ██ █ ██    ██ ▀
@@ -23,26 +23,32 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-set dmver "1.038"
-set releasedate "2018.11.28"
+package require Tcl 8.5
+package require http 2.9.0
+package require tls 1.7.11
+
+http::register https 443 [list ::tls::socket -autoservername true]
+
+set dmver "1.040"
+set releasedate "2018.11.29"
 # CONFIGURATION {{{
 set notify-newusers { "kyau" }		;# users to notify of new users and bots.
 logfile 5 * "logs/darkMAGE.log"		;# darkMAGE logfile
-set local_control "A"							;# botattr for local bots
-set bn_control "*"								;# default botnet control (* is all)
-set modes-per-line 4							;# irc network modes-per-line (EFnet: 4)
-set partylinelist 1								;# display partyline users on dcc connection (0/1)
-set bop_opkey "magicmonkey"				;# key used for encrypted ops verification
-set bop_modeop 1									;# requests ops when others get ops (0/1)
-set bop_linkop 1									;# requests ops from other linked bots (0/1)
-set bop_icheck 1									;# perform invite check to get in channels (0/1)
-set bop_delay 10									;# delay between requests for ops
-set bop_maxreq 2									;# maximum simultaneous op requests to send
-set bop_osync 0										;# skip op check when opping
-set bop_addhost 0									;# automatically add hosts to bots to gain ops
-set bop_log 2										  ;# 0 = no logging
-																	 # 1 = log: invite/limit/key/unban
-																	 # 2 = log: invite/limit/key/ops/unban
+set local_control "A"				;# botattr for local bots
+set bn_control "*"					;# default botnet control (* is all)
+set modes-per-line 4				;# irc network modes-per-line (EFnet: 4)
+set partylinelist 1					;# display partyline users on dcc connection (0/1)
+set bop_opkey "magicmonkey"			;# key used for encrypted ops verification
+set bop_modeop 1					;# requests ops when others get ops (0/1)
+set bop_linkop 1					;# requests ops from other linked bots (0/1)
+set bop_icheck 1					;# perform invite check to get in channels (0/1)
+set bop_delay 10					;# delay between requests for ops
+set bop_maxreq 2					;# maximum simultaneous op requests to send
+set bop_osync 0						;# skip op check when opping
+set bop_addhost 0					;# automatically add hosts to bots to gain ops
+set bop_log 2						;# 0 = no logging
+									 # 1 = log: invite/limit/key/unban
+									 # 2 = log: invite/limit/key/ops/unban
 # }}}
 # ----- DO NOT EDIT BELOW HERE! ----------------------------------------------- {{{
 # }}}
@@ -109,6 +115,8 @@ bind msg - op msg_op
 bind raw - MODE encrypted_opverify
 bind time - "57 * * * *" time:keeplinked
 bind raw - 001 bx_serverjoin
+bind pubm -|- "*youtube.*watch?v=*" yt_info
+bind pubm -|- "*youtu.be/*" yt_info
 # }}}
 # DEFAULT PROCS {{{
 proc putbotdcc {idx dcctxt} {
@@ -161,10 +169,10 @@ proc bop_encrypted {thost tnick} {
 }
 proc time:keeplinked {min hour day month year} {
  foreach b [userlist b] {
-  if {([string match "*h*" "[getuser $b BOTFL]"] || [string match "*a*" "[getuser $b BOTFL]"]) && (![string match "*r*" "[getuser $b BOTFL]"] && ![islinked $b])} {
-   putbotlog "Keeplinked linking: \002\ $b ...\002\ "
-   link "$b" 
-  }
+	if {([string match "*h*" "[getuser $b BOTFL]"] || [string match "*a*" "[getuser $b BOTFL]"]) && (![string match "*r*" "[getuser $b BOTFL]"] && ![islinked $b])} {
+	 putbotlog "Keeplinked linking: \002\ $b ...\002\ "
+	 link "$b" 
+	}
  }
 }
 # }}}
@@ -801,10 +809,10 @@ proc cmd_channels {hand idx args} {
 			lappend chans "\00305$chan\003"
 		} else {
 			#putdcc $idx "@$chan"
-		  lappend chans "$chan"
+			lappend chans "$chan"
 		}
 	}
- 	putbotdcc $idx "$chans"
+	putbotdcc $idx "$chans"
 }
 # }}}
 # DCC: .OP {{{
@@ -909,7 +917,7 @@ proc dcc:whomall {hand idx arg} {
 		return 
 	}
 	putbotdcc $idx "\00315whom all\003"
-	putbotdcc $idx " Nick      Chanl Bot       Idle   Away Host"
+	putbotdcc $idx " Nick			 Chanl Bot			 Idle		Away Host"
 	putbotdcc $idx " --------- ----- --------- ------ ---- ------------------------------"
 	foreach person [whom *] {
 		set nck [lindex $person 0]
@@ -938,18 +946,18 @@ proc dcc:whomall {hand idx arg} {
 proc dcc_chat {hand idx} {
 	global botnick server nick partylinelist uptime version
 	dccsimul $idx ".echo off"
-	putdcc $idx "\00311▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄ \003\00314▄ \003\00311▄▄ ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄▄▄▄▄\003\00310▄ \003\00311▄▄▄▄▄▄▄\003"
-	putdcc $idx "\00311,10▓▀\003 \00314▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314░  \003\00311,10▓█\003 \00311,10██\003\00314░▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314 ▀ \003\00311,10▓\00311,01█ \003\00311,10▓▀\003\00314░▄ \003\00311,10▓▀\003\00314░▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314░  \003\00311,10▓█\003 \00311,10▓▀\003 \00310▄\003\00311▄▄▄ \003\00311,10▓▀\003\00310▄▄ \003\00311▀▀\003"
+	putdcc $idx "\00311▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄ \003\00314▄ \003\00311▄▄ ▄▄▄▄▄▄▄▄▄▄▄	▄▄▄▄▄▄	▄▄▄▄▄▄\003\00310▄ \003\00311▄▄▄▄▄▄▄\003"
+	putdcc $idx "\00311,10▓▀\003 \00314▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314░  \003\00311,10▓█\003 \00311,10██\003\00314░▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314 ▀ \003\00311,10▓\00311,01█ \003\00311,10▓▀\003\00314░▄ \003\00311,10▓▀\003\00314░▄ \003\00311,10▓█\003 \00311,10▓▀\003\00314░	\003\00311,10▓█\003 \00311,10▓▀\003 \00310▄\003\00311▄▄▄ \003\00311,10▓▀\003\00310▄▄ \003\00311▀▀\003"
 	putdcc $idx "\00311,10▒\003\00310█ \003\00314▀\003\00310▄\003\00311,10▒\003\00310█ \003\00311,10░\003\00310▓\003\00311▀▀▀\003\00311,10▒▀\003 \00311▓\003\00310▓ \003\00314▓ \003\00311,10░▀\003 \00311,10░\003\00310▓\003\00311▀▀\003\00311,10▀\003\00311,01█▄ \003\00311,10░\003\00310▓ \003\00314▓ \003\00311,10░\003\00310▓ \003\00314▓ \003\00311,10▒▀\003 \00311,10░\003\00310▓\003\00311▀▀▀\003\00311,10▒▀\003 \00311,10▒\003\00310█▄  \00311,10▒▀\003 \00311,10▒\003\00310▓▄\003\00314░ \003\00311,10▓▀\003"
-	putdcc $idx "\00310▀▀▀▀▀▀\003\00314░ \003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀\003\00314░     \003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀ \003\00314▀ \003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀ \003\00314▀ \003\00311,10░\003\00310█ \003\00314░\003\00310▀▀▀▀▀▀  ▀▀▀▀▀▀\003"
+	putdcc $idx "\00310▀▀▀▀▀▀\003\00314░ \003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀\003\00314░			\003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀ \003\00314▀ \003\00310▀▀ \003\00314▀ \003\00311,10░\003\00310█ ▀▀ \003\00314▀ \003\00311,10░\003\00310█ \003\00314░\003\00310▀▀▀▀▀▀  ▀▀▀▀▀▀\003"
 	putdcc $idx " "
- 	putdcc $idx "        Bot: \00300$botnick\003   Users: \00300[countusers]\003"
-	putdcc $idx "        Server: \00300$server\003"
-	putdcc $idx "        OS: \00300[exec uname -sr]\003"
+	putdcc $idx "				 Bot: \00300$botnick\003	 Users: \00300[countusers]\003"
+	putdcc $idx "				 Server: \00300$server\003"
+	putdcc $idx "				 OS: \00300[exec uname -sr]\003"
 	set ver [split $version " "]
- 	putdcc $idx "        Running: \00300eggdrop v[lindex $ver 0] (ssl+ipv6)\003"
-	putdcc $idx "        Uptime: \00300$uptime\003"
-	putdcc $idx "        Channels:"
+	putdcc $idx "				 Running: \00300eggdrop v[lindex $ver 0] (ssl+ipv6)\003"
+	putdcc $idx "				 Uptime: \00300$uptime\003"
+	putdcc $idx "				 Channels:"
 	set chans {}
 	foreach chan [channels] {
 		if {![botisop $chan]} {
@@ -957,17 +965,17 @@ proc dcc_chat {hand idx} {
 			lappend chans "\0034$chan\003"
 		} else {
 			#putdcc $idx "@$chan"
-		  lappend chans "\00310$chan\003"
+			lappend chans "\00310$chan\003"
 		}
 	}
- 	putdcc $idx "          $chans"
+	putdcc $idx "					 $chans"
 	putdcc $idx " "
-	putdcc $idx "        Use \002\00300.help\003\002 for basic help."
-	putdcc $idx "        Usr \002\00300.darkmage\003\002 for botnet help."
+	putdcc $idx "				 Use \002\00300.help\003\002 for basic help."
+	putdcc $idx "				 Usr \002\00300.darkmage\003\002 for botnet help."
 	if {$partylinelist == 1} {
 		set tmpcount [whom 0]
 		if {[llength $tmpcount] != 0} {
-			putdcc $idx "        Partyline Users:"
+			putdcc $idx "				 Partyline Users:"
 			foreach dcclist1 [whom 0] {
 				set thehand [lindex $dcclist1 0]
 				if {[matchattr $thehand n]} {
@@ -979,7 +987,7 @@ proc dcc_chat {hand idx} {
 				} else {
 					set pcw "(user)"
 				}
-				putdcc $idx "          $pcw \002\00300$thehand\003\002 on \00310[lindex $dcclist1 1]\003"
+				putdcc $idx "					 $pcw \002\00300$thehand\003\002 on \00310[lindex $dcclist1 1]\003"
 			}
 		}
 	}
@@ -996,10 +1004,11 @@ proc ban:+ban {handle idx arg} {
 	*dcc:+ban $handle $idx "$arg ($handle@$date)"
 }
 # }}}
-# BOTNET: BOT WANTS OP {{{
+# BOTNET: BOT WANTS OP {{{zo
 if {$numversion < 1032500} {
 	proc islinked {bot} {
 		if {[lsearch -exact [string tolower [bots]] [string tolower $bot]] == -1} {return 0}
+		error "illegal op request: $bot => $chan"
 		return 1
 	}
 	if {$numversion < 1032400} {
@@ -1141,15 +1150,12 @@ proc bop_botwantsops {frombot cmd arg} {
 	set trandom [bop_encrypted $fromhost $fromnick]
 	if {$bop_osync} {
 		if {$numversion < 1040000} {
-			#putlog "moo0"
 			putquick "MODE $chan +o-b $fromnick *!$frombot@$trandom"
 		} else {
-			#putlog "moo1"
 			putquick "MODE $chan +o-b $fromnick *!$frombot@$trandom"
 		}
 	} else {
 		if {[isop $fromnick $chan]} {return 0}
-		#putlog "moo2"
 		putquick "MODE $chan +o-b $fromnick *!$frombot@$trandom"
 	}
 	if {$bop_log >= 2} {
@@ -1435,9 +1441,9 @@ proc encrypted_opverify {from key text} {
 		#putlog "\00306DEBUG:\003 hash:{$hash}"
 		#putlog "\00306DEBUG:\003 checked:{$trandom}"
 		if {$trandom == $hash} {
-			putbotdcclog "OP Hash: \00315$hash\003\00309  \003"
+			putbotdcclog "OP Hash: \00315$hash\003\00309 ✓ \003"
 		} else {
-			putbotdcclog "OP Hash: \00315$hash\003\00304  \003"
+			putbotdcclog "OP Hash: \00315$hash\003\00304 x \003"
 			putquick "MODE $chan -oo-b $nick $opnick *!$botnick@ERR_INVALID_HASH"
 		}
 	}
@@ -1485,6 +1491,9 @@ foreach t [timers] {if {[lindex $t 1]=="party:autoaway"} {killtimer [lindex $t 2
 timer 1 party:autoaway
 # }}}
 # AUTO-LIMIT {{{
+#
+# .chanset #chan +limit
+# .dolimit #chan
 set dm:limit 5
 set dm:timer 10
 set dm:grace 2
@@ -1507,23 +1516,24 @@ proc dm:dcc:dolimit {hand idx args} {
 		putdcc $idx "Usage: limit \[channel\]"
 		return 0
 	}
-	if {![validchan $args]} {
+	set limitchan [lindex $args 0]
+	if {![validchan $limitchan]} {
 		putbotdcc $idx "error: invalid channel"
 		return 0
 	}
-	if {![botonchan $args]} {
-		putbotdcc $idx "error: not on $args"
+	if {![botonchan $limitchan]} {
+		putbotdcc $idx "error: not on $limitchan"
 		return 0
 	}
-	if {![botisop $args]} {
-		putbotdcc $idx "error: not opped on $args"
+	if {![botisop $limitchan]} {
+		putbotdcc $idx "error: not opped on $limitchan"
 		return 0
 	}
-	if {[string match "*-limit*" [channel info $args]]} {
-		putdcc $idx "$args is set to -limit.  Please type .chanset $args +limit to enable limitting."
+	if {[string match "*-limit*" [channel info $limitchan]]} {
+		putdcc $idx "$limitchan is set to -limit.	Please type .chanset $limitchan +limit to enable limitting."
 		return 0
 	}
-	dm:dolimit $args
+	dm:dolimit $limitchan
 	return 1
 }
 proc dm:checklimit {} {
@@ -1568,9 +1578,9 @@ proc dm:dolimit {chan} {
 set bx_flood 5:30:120
 set bx_away 1
 set bx_jointime [unixtime]
-set bx_system "FreeBSD 6.2-RELEASE"
+set bx_system "OpenBSD 6.4"
 set bx_whoami $username
-set bx_machine "bitchx.nl"
+set bx_machine "bitchx.com"
 set bx_version "1.1-final+"
 proc bx_ctcp {nick uhost hand dest key arg} {
 	global bx_flood bx_flooded bx_floodqueue bx_jointime bx_machine bx_onestack bx_system bx_version bx_whoami realname
@@ -1731,9 +1741,6 @@ if {![info exists bx_onestack]} {
 if {![info exists bx_version]} {
 	set bx_version [lindex {1.0c18} [rand 2]]
 }
-catch {set bx_system "FreeBSD 6.2-RELEASE"}
-catch {set bx_whoami [exec id -un]}
-catch {set bx_machine "bitchx.nl"}
 if {$bx_away} {
 	if {![info exists bx_isaway]} {
 		set bx_isaway 0
@@ -1746,5 +1753,37 @@ if {$numversion >= 1032500} {
 	set ctcp-mode 0
 }
 # }}}
+# MOD: YouTube {{{
+setudef flag youtube
+proc yt_info {nick host hand chan text} {
+	if {[lsearch -exact [channel info $chan] +youtube] != -1} {
+		set yt_check [regexp -all -nocase {(?:\/watch\?v=|youtu\.be\/)([\d\w-]{11})} $text match yt_id]
+		if {$yt_id != ""} {
+			set yt_host www.youtube.com
+			set yt_url "/watch?v=${yt_id}"
+			set yt_title "Unknown"
+			set yt_user "N/A"
+			set yt_quality "??"
+			set yt_view "0"
+			#set client [http::config -useragent "lynx"]
+			set client [http::geturl "https://www.youtube.com$yt_url" -timeout 50000]
+			set data [http::data $client]
+			http::cleanup $client
 
-# vim: ft=tcl ts=2 sw=2 noet :
+			if {[regexp -nocase {quality_label=([a-zA-Z0-9]+)\\u} $data]} {
+			    set yt_quality [regexp -all -inline -nocase {quality_label=([a-zA-Z0-9]+)\\u} $data]
+				set yt_quality [lindex $yt_quality 3]
+			}
+			set success [regexp -nocase {watch-view-count\">([0-9,]+) views<} $data match yt_views]
+			set success [regexp -nocase {\"title\"\:\"([^\"]+)\"} $data match yt_title]
+			set success [regexp -nocase {\"author_name\"\:\"([^\"]+)\"} $data match yt_user]
+			if {$success != "1"} {
+			    set success [regexp -nocase {\"author\"\:\"([^\"]+)\"} $data match yt_user]
+			}
+			putmsg $chan "\0034▐\003\0030,4►\003\0034▌\003 $yt_user \00314=>\003 $yt_title \0033\[${yt_quality}\]\003 $yt_views views"
+		}
+	}
+}
+# }}}
+
+# vim: ft=tcl ts=4 sw=4 noet :
