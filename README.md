@@ -8,6 +8,7 @@
 <a href="irc://irc.efnet.org:+9999/kyaulabs">irc://irc.efnet.org:+9999/kyaulabs</a>
 
 [![](https://img.shields.io/badge/coded_in-vim-green.svg?logo=vim&logoColor=brightgreen&colorB=brightgreen&longCache=true&style=flat)](https://vim.org) &nbsp; [![](https://img.shields.io/badge/license-AGPL_v3-blue.svg?style=flat)](https://raw.githubusercontent.com/kyau/darkmage/master/LICENSE) &nbsp; [![](https://img.shields.io/badge/eggdrop-1.8+-C85000.svg?style=flat)](https://github.com/eggheads/eggdrop) &nbsp; [![](https://img.shields.io/badge/tcl-8.5+-C85000.svg?style=flat)](https://www.tcl.tk/)
+
 [![](https://img.shields.io/badge/pkg:http->=_2.9.0-8E68AC.svg?style=flat)](https://core.tcl.tk/tcllib/) &nbsp; [![](https://img.shields.io/badge/pkg:tls->=_1.7.11-8E68AC.svg?style=flat)](https://core.tcl.tk/tcltls/)
 
 ### About
@@ -43,6 +44,8 @@ and restart/rehash your eggdrop. Linking bots is relatively easy.
 > .chattr hub +bfopA
 > .botattr hub +ghp
 ```
+
+Keep in mind the `A` flag is set by default as the "control all bots" flag. Also do not forget to change the value of `bop_opkey`.
 
 ### Attribution
 If anyone has any information as to the original author or authors, please let me know!
