@@ -1,8 +1,14 @@
 ![ANSI Logo](https://raw.githubusercontent.com/kyau/darkmage/master/darkmage.ans.png "ANSI Logo")  
-<a href="irc://irc.efnet.org:+9999/kyaulabs">irc://irc.efnet.org:+9999/kyaulabs</a>
+<a href="irc://irc.efnet.org:+9999/kyaulabs">irc://irc.kyaulabs.com:+9999/ak!ra</a>
 
 [![](https://img.shields.io/badge/coded_in-vim-green.svg?logo=vim&logoColor=brightgreen&colorB=brightgreen&longCache=true&style=flat)](https://vim.org) &nbsp; [![](https://img.shields.io/badge/license-AGPL_v3-blue.svg?style=flat)](https://raw.githubusercontent.com/kyau/darkmage/master/LICENSE) &nbsp; [![](https://img.shields.io/badge/eggdrop-1.8+-C85000.svg?style=flat)](https://github.com/eggheads/eggdrop) &nbsp; [![](https://img.shields.io/badge/tcl-8.5+-C85000.svg?style=flat)](https://www.tcl.tk/)  
 [![](https://img.shields.io/badge/pkg:http->=_2.9.0-8E68AC.svg?style=flat)](https://core.tcl.tk/tcllib/) &nbsp; [![](https://img.shields.io/badge/pkg:tls->=_1.7.11-8E68AC.svg?style=flat)](https://core.tcl.tk/tcltls/)
+
+### Archived
+This repository is now archived as there is a newer version of this available.
+Please refer to the following two repositories instead:
+* [ak!ra](https://github.com/kyaulabs/akira): botpack for hybrid(core)
+* [hybrid(core)](https://github.com/kyaulabs/hybridcore): A security patch for eggdrop based on the eggdrop1.1.6 hybrid(core) patch
 
 ### About
 This botnet script has been around for longer than I can remember. While I know
